@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Feliz Aniversário, Vó!</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23241710'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle'%3E%F0%9F%8E%82%3C/text%3E%3C/svg%3E">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;overflow:hidden;}
@@ -124,6 +125,29 @@
 
   audio{display:none;}
 
+  .play-btn{
+    position:fixed;
+    bottom:22px;
+    right:22px;
+    z-index:10;
+    background:#241710;
+    color:#f1e9e1;
+    border:1px solid #c9876a;
+    border-radius:50px;
+    padding:10px 18px;
+    font-family:'Georgia',serif;
+    font-size:0.85em;
+    font-style:italic;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.25);
+    transition:transform .2s ease, opacity .3s ease;
+  }
+  .play-btn:hover{transform:translateY(-2px);}
+  .play-btn.hidden{opacity:0;pointer-events:none;}
+
   @media (max-width:760px){
     .card{flex-direction:column;height:94vh;max-height:none;}
     .text-side{padding:34px 30px;flex:none;}
@@ -156,7 +180,8 @@
     </div>
   </div>
 
-  <audio id="bgmusic" src="musica.mp3" loop autoplay></audio>
+  <button class="play-btn" id="playBtn">▶ Tocar música</button>
+  <audio id="bgmusic" src="musica.mp3" autoplay loop preload="auto" playsinline></audio>
 <script>
 const canvas = document.getElementById('confetti');
 const ctx = canvas.getContext('2d');
@@ -196,9 +221,39 @@ function draw(){
   requestAnimationFrame(draw);
 }
 draw();
+
 const audio = document.getElementById('bgmusic');
-document.body.addEventListener('click', () => { audio.play().catch(()=>{}); }, { once:true });
-window.addEventListener('load', () => { audio.play().catch(()=>{}); });
+const playBtn = document.getElementById('playBtn');
+audio.volume = 1;
+
+function startMusic(){
+  audio.play().then(() => {
+    playBtn.classList.add('hidden');
+  }).catch(() => {
+    // autoplay bloqueado, mantém o botão visível
+  });
+}
+
+// Tenta iniciar imediatamente e novamente assim que a página terminar de abrir.
+startMusic();
+window.addEventListener('DOMContentLoaded', startMusic);
+window.addEventListener('load', startMusic);
+
+// botão sempre garante o play
+playBtn.addEventListener('click', startMusic);
+
+// qualquer clique na página também tenta iniciar, caso o autoplay tenha sido bloqueado
+document.body.addEventListener('click', () => {
+  if(audio.paused){ startMusic(); }
+});
+
+// Navegadores que bloqueiam áudio automático liberam a reprodução
+// na primeira interação do visitante.
+['pointerdown', 'touchstart', 'keydown'].forEach(eventName => {
+  document.addEventListener(eventName, () => {
+    if(audio.paused){ startMusic(); }
+  }, { once:true, passive:true });
+});
 </script>
 </body>
 </html>
